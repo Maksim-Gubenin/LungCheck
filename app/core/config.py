@@ -29,9 +29,18 @@ class RunConfig(BaseModel):
     port: int = 8000
 
 
-class ApiPrefix(BaseModel):
+class LungCheckPrefix(BaseModel):
+    prefix: str = "/lungcheck"
+
+
+class ApiV1Prefix(BaseModel):
     prefix: str = "/v1"
-    currency: str = "/currency"
+    lungcheck: LungCheckPrefix = LungCheckPrefix()
+
+
+class ApiPrefix(BaseModel):
+    prefix: str = "/api"
+    v1: ApiV1Prefix = ApiV1Prefix()
 
 
 class Settings(BaseSettings):
