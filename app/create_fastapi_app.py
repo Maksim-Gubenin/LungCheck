@@ -6,6 +6,7 @@ customized Swagger UI and ReDoc documentation, async lifespan management,
 and ORJSON response serialization.
 """
 
+import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -20,6 +21,8 @@ from fastapi.responses import HTMLResponse, ORJSONResponse
 from app.api import api_router
 from app.core import db_helper
 
+
+logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -37,9 +40,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     """
     # Startup: Resources are initialized here
+    logger.info("Starting up LungCheck application...")
     yield
+    logger.info("Shutting down LungCheck application...")
     # Shutdown: Cleanup resources
     await db_helper.dispose()
+    logger.info("Database connections disposed.")
 
 
 def register_static_docs_routes(app: FastAPI) -> None:
