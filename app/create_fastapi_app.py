@@ -20,9 +20,10 @@ from fastapi.responses import HTMLResponse, ORJSONResponse
 
 from app.api import api_router
 from app.core import db_helper
-
+from app.core.ml.model_loader import model_loader
 
 logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -41,6 +42,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
     # Startup: Resources are initialized here
     logger.info("Starting up LungCheck application...")
+
+    logger.info("Loading ML model...")
+    app.state.model = model_loader.load_model()
+
     yield
     logger.info("Shutting down LungCheck application...")
     # Shutdown: Cleanup resources

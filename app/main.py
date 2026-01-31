@@ -1,5 +1,6 @@
-import uvicorn
 import logging
+
+import uvicorn
 
 from app.core.config import settings
 from app.create_fastapi_app import create_app
