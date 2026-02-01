@@ -6,6 +6,8 @@ import torch.nn as nn
 from torchvision import models
 from torchvision.models import ResNet
 
+from app.core.config import settings
+
 logger = logging.getLogger(__name__)
 
 
@@ -16,24 +18,26 @@ class ModelLoader:
         self.model = None
 
     def load_model(self) -> ResNet:
-        """Инициализация архитектуры и загрузка весов."""
         logger.info("Initializing %s architecture...", self.model_name)
 
-        # 1. Берем ResNet18
-        model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
+        model: ResNet = models.resnet18(weights=None)
+        model.fc = nn.Linear(model.fc.in_features, 2)
 
-        # 2. Заменяем голову
-        num_ftrs = model.fc.in_features
-        # На выходе нам нужно 2 класса: [NORMAL, PNEUMONIA]
-        model.fc = nn.Linear(num_ftrs, 2)
+        weights_path = settings.PROJECT_ROOT / settings.ml_config.model_path
 
-        # 3. Переносим на CPU и переводим в режим предсказания
-        self.model = model.to(self.device)
-        model_instance = cast(ResNet, self.model)
-        self.model.eval()
+        if weights_path.exists():
+            logger.info("Loading trained weights from %s", weights_path)
+            model.load_state_dict(torch.load(weights_path, map_location=self.device))
+        else:
+            logger.warning("Trained weights NOT FOUND at %s", weights_path)
+
+        model.to(self.device)
+        model.eval()
+
+        self.model = model
 
         logger.info("Model loaded successfully on %s", self.device)
-        return self.model
+        return model
 
 
 model_loader = ModelLoader()

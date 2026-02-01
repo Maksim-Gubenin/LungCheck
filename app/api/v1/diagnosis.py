@@ -3,6 +3,7 @@ from datetime import datetime
 
 import torch
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import db_helper, settings
@@ -75,3 +76,22 @@ async def predict(
         ) from e
     finally:
         await file.close()
+
+
+@api_router.get("/history", response_model=list[PneumoniaPredictionResponse])
+async def get_history(
+    session: AsyncSession = Depends(db_helper.session_getter), limit: int = 10
+) -> list[PneumoniaPredictionResponse]:
+    stmt = select(Prediction).order_by(Prediction.created_at.desc()).limit(limit)
+    result = await session.execute(stmt)
+    predictions = result.scalars().all()
+
+    return [
+        PneumoniaPredictionResponse(
+            filename=p.filename,
+            prediction=p.prediction,
+            confidence=p.confidence,
+            timestamp=p.created_at,
+        )
+        for p in predictions
+    ]

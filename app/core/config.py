@@ -33,6 +33,10 @@ class LungCheckPrefix(BaseModel):
     prefix: str = "/lungcheck"
 
 
+class MLConfig(BaseModel):
+    model_path: str = "models/pneumonia_resnet18.pth"
+
+
 class ApiV1Prefix(BaseModel):
     prefix: str = "/v1"
     lungcheck: LungCheckPrefix = LungCheckPrefix()
@@ -50,8 +54,10 @@ class Settings(BaseSettings):
         env_nested_delimiter="__",
         env_prefix="APP_CONFIG__",
     )
+    PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent.parent
     run: RunConfig = RunConfig()
     api: ApiPrefix = ApiPrefix()
+    ml_config: MLConfig = MLConfig()
     db: DatabaseConfig
 
 

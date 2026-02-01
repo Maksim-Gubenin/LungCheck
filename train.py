@@ -42,7 +42,7 @@ def train_model() -> None:
 
     # Функция потерь и Оптимизатор
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    optimizer = optim.Adam(model.parameters(), lr=0.0001)
 
     # Цикл обучения
     os.makedirs("./models", exist_ok=True)
