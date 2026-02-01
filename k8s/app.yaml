@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lungcheck-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: lungcheck
+  template:
+    metadata:
+      labels:
+        app: lungcheck
+    spec:
+      containers:
+      - name: lungcheck
+        image: lungcheck-app:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: APP_CONFIG__DB__URL
+          value: "postgresql+asyncpg://user:password@pg-service:5432/lungcheck"
