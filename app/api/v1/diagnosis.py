@@ -2,9 +2,11 @@ import logging
 from datetime import datetime
 
 import torch
-from fastapi import APIRouter, File, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core import settings
+from app.core import db_helper, settings
+from app.core.models import Prediction
 from app.schemas import PneumoniaPredictionResponse
 from app.utils import image_processor
 
@@ -13,7 +15,11 @@ logger = logging.getLogger(__name__)
 
 
 @api_router.post("/predict", response_model=PneumoniaPredictionResponse)
-async def predict(request: Request, file: UploadFile = File(...)) -> PneumoniaPredictionResponse | None:
+async def predict(
+    request: Request,
+    file: UploadFile = File(...),
+    session: AsyncSession = Depends(db_helper.session_getter),
+) -> PneumoniaPredictionResponse | None:
     # 1. Если не изображение - выдать исключение
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(
@@ -28,8 +34,6 @@ async def predict(request: Request, file: UploadFile = File(...)) -> PneumoniaPr
         input_tensor = image_processor.process_image(content)
 
         logger.info("Tensor successfully created. Shape: %s", input_tensor.shape)
-
-        # >>>>>>>>>>><<<<<<<<<<<
 
         # Достаем модель из состояния приложения
         model = request.app.state.model
@@ -46,13 +50,21 @@ async def predict(request: Request, file: UploadFile = File(...)) -> PneumoniaPr
         class_names = ["NORMAL", "PNEUMONIA"]
         prediction_label = class_names[int(predicted_class.item())]
 
-        # 4. Возвращаем результат
-        filename = file.filename or "unknown.jpg"
-        return PneumoniaPredictionResponse(
-            filename=filename,
+        new_prediction = Prediction(
+            filename=file.filename,
             prediction=prediction_label,
-            confidence=round(confidence.item(), 4),
-            timestamp=datetime.now(),
+            confidence=float(confidence.item()),
+        )
+
+        session.add(new_prediction)
+        await session.commit()
+        await session.refresh(new_prediction)
+
+        return PneumoniaPredictionResponse(
+            filename=new_prediction.filename,
+            prediction=new_prediction.prediction,
+            confidence=round(new_prediction.confidence, 4),
+            timestamp=new_prediction.created_at,
         )
 
     except Exception as e:
