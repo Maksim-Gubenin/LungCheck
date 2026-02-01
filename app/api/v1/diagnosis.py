@@ -64,7 +64,7 @@ async def predict(
         return PneumoniaPredictionResponse(
             filename=new_prediction.filename,
             prediction=new_prediction.prediction,
-            confidence=round(new_prediction.confidence, 4),
+            confidence=round(new_prediction.confidence * 100, 2),
             timestamp=new_prediction.created_at,
         )
 
